@@ -1,6 +1,6 @@
 FROM rust:latest as cargo-build
 RUN apt-get update
-RUN apt-get install musl-tools -y
+RUN apt-get install musl-tools gcc-arm-linux-gnueabi make git-core ncurses-dev -y
 RUN rustup target add x86_64-unknown-linux-musl
 RUN rustup target add armv7-unknown-linux-gnueabihf
 WORKDIR /usr/src/myapp
