@@ -14,11 +14,13 @@
 
 use tokio;
 use tokio::net::UdpSocket;
+use tokio::time;
 
 use futures::future;
 use std::collections::HashMap;
 use std::error::Error;
 use std::net::SocketAddr;
+use std::time::Duration;
 use std::{env, io};
 
 struct Server {
@@ -35,43 +37,41 @@ impl Server {
         println!("in run");
 
         // let mut hm = HashMap::new();
-        let mut buf: Vec<u8> = vec![0; 65_507];
+        let mut buf: Vec<u8> = vec![0; 1024];
+        let mut new_buf: Vec<u8> = vec![0; 65_507];
 
         loop {
+            // let mut buf: Vec<u8> = vec![0; 65_507];
+            self.to_send = Some(self.socket.recv_from(&mut buf).await?);
             if let Some((size, peer)) = self.to_send {
-                //forward client request to up address
                 println!("size {} peer {}", size, peer);
-                let amt = self
-                    .up_socket
-                    .send_to(&buf[..size], &self.remote_addr)
-                    .await?;
-                // println!("send to up addr {}/{} bytes to {}", amt, size, peer);
-                //store the local address in hashmap
                 let s: String = String::from_utf8_lossy(&buf[..2]).to_string();
                 self.hm.insert(s, peer);
-            }
-
-            self.to_send = Some(self.socket.recv_from(&mut buf).await?);
-        }
-    }
-
-    async fn run_remote(&mut self) -> Result<(), io::Error> {
-        println!("in run remote");
-
-        let mut buf: Vec<u8> = vec![0; 65_507];
-        loop {
-            if let Some((size, peer)) = self.up_to_send {
-                let s: String = String::from_utf8_lossy(&buf[..2]).to_string();
-                if let Some(local_addr) = self.hm.get(&s) {
-                    //send back response from up address to client
-                    let amt = self.socket.send_to(&buf[..size], &local_addr).await?;
-                    println!("send to client {}/{} bytes to {}", amt, size, peer);
+                self.up_socket
+                    .send_to(&buf[..size], &self.remote_addr)
+                    .await?;
+                if let Ok(Ok((up_size, source))) = time::timeout(
+                    Duration::from_secs(2),
+                    self.up_socket.recv_from(&mut new_buf),
+                )
+                .await
+                {
+                    let s: String = String::from_utf8_lossy(&new_buf[..2]).to_string();
+                    if let Some(local_addr) = self.hm.get(&s) {
+                        println!(
+                            "up_size {} local_addr {} source {}",
+                            up_size, local_addr, source
+                        );
+                        self.socket
+                            .send_to(&new_buf[..up_size], &local_addr)
+                            .await?;
+                    } else {
+                        println!("ghost addr {}", s)
+                    }
                 } else {
-                    println!("ghost addr {}", s)
+                    println!("timeout")
                 }
             }
-
-            self.up_to_send = Some(self.up_socket.recv_from(&mut buf).await?);
         }
     }
 }
@@ -87,7 +87,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let up_socket = UdpSocket::bind(local_addr).await?;
     println!("Listening on: {}", socket.local_addr()?);
 
-    let up_addr: SocketAddr = "104.238.131.160:60053".parse()?;
+    let up_addr = env::args().nth(2).unwrap_or_else(|| "114.114.114.114:53".to_string());
+    let up_addr: SocketAddr = up_addr.parse()?;
 
     let hm = HashMap::new();
     let mut server = Server {
@@ -99,16 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         remote_addr: up_addr,
     };
 
-    // let _run1 = server.run();
-    // let shared = Rc::new(RefCell::new(server));
-    // let mut _run2 = shared.borrow_mut().run_remote();
-    // let mut _run1 = shared.borrow_mut();
-    // let mut _run2 = shared.borrow_mut();
-    // _run1.run()
-    match future::try_join(server.run(), server.run()).await {
-        Err(e) => println!("an error occurred; error = {:?}", e),
-        _ => println!("done!"),
-    }
+    server.run().await?;
 
     Ok(())
 }
