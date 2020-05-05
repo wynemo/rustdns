@@ -16,7 +16,6 @@ use tokio;
 use tokio::net::UdpSocket;
 use tokio::time;
 
-use futures::future;
 use std::collections::HashMap;
 use std::error::Error;
 use std::net::SocketAddr;
@@ -27,7 +26,6 @@ struct Server {
     socket: UdpSocket,
     up_socket: UdpSocket,
     to_send: Option<(usize, SocketAddr)>,
-    up_to_send: Option<(usize, SocketAddr)>,
     hm: HashMap<String, SocketAddr>,
     remote_addr: SocketAddr,
 }
@@ -36,12 +34,10 @@ impl Server {
     async fn run(&mut self) -> Result<(), io::Error> {
         println!("in run");
 
-        // let mut hm = HashMap::new();
         let mut buf: Vec<u8> = vec![0; 1024];
         let mut new_buf: Vec<u8> = vec![0; 65_507];
 
         loop {
-            // let mut buf: Vec<u8> = vec![0; 65_507];
             self.to_send = Some(self.socket.recv_from(&mut buf).await?);
             if let Some((size, peer)) = self.to_send {
                 println!("size {} peer {}", size, peer);
@@ -96,7 +92,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         to_send: None,
         up_socket,
         hm,
-        up_to_send: None,
         remote_addr: up_addr,
     };
 
