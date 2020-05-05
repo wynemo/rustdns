@@ -4,6 +4,7 @@ FROM rust:latest as cargo-build
 #RUN rustup target add x86_64-unknown-linux-musl
 #RUN rustup target add armv7-unknown-linux-gnueabihf
 RUN rustup target add armv7-unknown-linux-musleabihf
+RUN echo `dpkg --print-architecture`
 WORKDIR /usr/src/myapp
 COPY . .
 #RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
