@@ -23,4 +23,4 @@ jobs:
         run: |
           docker buildx build --push \
             --tag wynemo/rustdns \
-            --platform linux/amd64 .
+            --platform linux/arm/v7 .

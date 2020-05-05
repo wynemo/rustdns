@@ -7,8 +7,7 @@ WORKDIR /usr/src/myapp
 COPY . .
 #RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
 #RUN RUSTFLAGS=-Clinker=arm-none-linux-gnueabihf-gcc cargo build --release --target=armv7-unknown-linux-gnueabihf
-#RUN cargo build --release --target=armv7-unknown-linux-musleabihf
-RUN cargo build --release
+RUN cargo build --release --target=armv7-unknown-linux-musleabihf
 
 FROM alpine:latest
 WORKDIR /home/myapp/bin/
