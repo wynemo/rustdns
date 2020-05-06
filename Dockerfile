@@ -13,5 +13,6 @@ RUN cargo build --release --target=armv7-unknown-linux-musleabihf
 FROM alpine:latest
 WORKDIR /home/myapp/bin/
 #COPY --from=cargo-build /usr/src/myapp/target/x86_64-unknown-linux-musl/release/udpdns .
-COPY --from=cargo-build /usr/src/myapp/target/release/udpdns .
+COPY --from=cargo-build /usr/src/myapp/target/armv7-unknown-linux-musleabihf/release/udpdns .
+#COPY --from=cargo-build /usr/src/myapp/target/release/udpdns .
 CMD ["udpdns"]
