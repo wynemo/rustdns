@@ -1,4 +1,4 @@
-FROM rust:alpine as cargo-build
+FROM rust:slim as cargo-build
 #RUN apt-get update
 #RUN apt-get install musl-tools gcc-arm-linux-gnueabi make git-core ncurses-dev -y
 #RUN rustup target add x86_64-unknown-linux-musl
