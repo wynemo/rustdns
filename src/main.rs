@@ -1,15 +1,3 @@
-//! An UDP echo server that just sends back everything that it receives.
-//!
-//! If you're on Unix you can test this out by in one terminal executing:
-//!
-//!     cargo run --example echo-udp
-//!
-//! and in another terminal you can run:
-//!
-//!     cargo run --example connect -- --udp 127.0.0.1:8080
-//!
-//! Each line you type in to the `nc` terminal should be echo'd back to you!
-
 #![warn(rust_2018_idioms)]
 
 use tokio;
